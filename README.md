@@ -1,9 +1,10 @@
 # Huurwoning Monitor Haarlem e.o.
 
-Checkt elke 5 minuten vijf verhuursites op nieuwe huurwoningen in
+Checkt elke 5 minuten zeven verhuursites op nieuwe huurwoningen in
 **Haarlem, Heemstede, Santpoort en Overveen** tot **€ 1.300 per maand**,
 en stuurt een Telegram-bericht bij elke nieuwe woning (adres, plaats,
-prijs en link).
+prijs en link). Zakt de prijs van een bekende woning tot binnen het
+budget, dan krijg je ook een bericht (prijsverlaging).
 
 ## Welke sites?
 
@@ -14,6 +15,23 @@ prijs en link).
 | WBOS Makelaars | HTML-pagina (al verhuurde woningen worden overgeslagen) |
 | ikwilhuren.nu | HTML-pagina's, met paginering |
 | Vesteda | JSON-API (de woningen staan niet in de HTML) |
+| 123Wonen | Vestigingspagina `/huurwoningen/van/haarlem` (toont hele regio) |
+| Interhouse | WordPress-AJAX-endpoint (`building_results_action`, vestiging Haarlem) |
+
+## Cloud-vangnet + watchdog (GitHub Actions)
+
+De monitor draait op je Mac, maar een Mac slaapt weleens. Daarom:
+
+- Na elke geslaagde run pusht de Mac een **hartslag** (tijdstempel) en de
+  database naar GitHub (repo `mmabrahams/huurwoning-monitor`, branch `state`).
+- **GitHub Actions checkt elke ~10 minuten** die hartslag. Is hij ouder dan
+  25 minuten, dan krijg je één Telegram-waarschuwing (max 1x per 24 uur)
+  en draait de cloud de monitor zelf, tot je Mac terug is.
+- De cloud gebruikt **dezelfde database**, en de Mac neemt bij het opstarten
+  eerst de cloud-vondsten over. Zo krijg je geen dubbele berichten.
+
+Staat je Mac expres uit (vakantie)? Prima - de cloud monitort gewoon door.
+De waarschuwing mag je dan negeren.
 
 ## Hoe het werkt
 
@@ -61,14 +79,18 @@ tail -50 "/Users/miquel/Claude appjes/Privé/huurwoning-monitor/monitor.log"
 - `monitor.py` - hoofdscript, checkt alle sites
 - `shared.py` - instellingen (budget, plaatsen), Telegram, database, filters
 - `scrapers/` - één bestand per site
+- `cloud_check.py` - watchdog + vangnet, draait alleen op GitHub Actions
+- `merge_cloud.py` - neemt cloud-vondsten over in de lokale database
 - `listings.db` - SQLite-database met alle geziene woningen
 - `.env` - Telegram-token en chat-id (zelfde bot als de antikraak-monitor)
 - `monitor.log` - logboek (wordt automatisch klein gehouden)
+- `.github/workflows/monitor.yml` - het cloud-vangnet
 
-## Later toevoegen: 123wonen.nl en interhouse.nl
+## Nieuwe site toevoegen
 
-Deze sites laden hun woningen met JavaScript; daarvoor moeten we hun
-JSON-endpoints gebruiken (zelfde aanpak als bij Vesteda). Nieuwe site
-toevoegen = nieuw bestand in `scrapers/` + één regel in de
-`SITES`-lijst in `monitor.py`. De eerste run seedt dan automatisch
-zonder berichten.
+Nieuw bestand in `scrapers/` + één regel in de `SITES`-lijst in
+`monitor.py`, en daarna `git push` (zodat de cloud hem ook kent).
+De eerste run seedt automatisch zonder berichtenregen.
+
+Onderzocht en afgevallen: huurwoningen.nl en Pararius blokkeren
+geautomatiseerde verzoeken (HTTP 403).
