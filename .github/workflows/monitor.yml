@@ -1,0 +1,87 @@
+name: Huurwoning Monitor (vangnet + watchdog)
+
+on:
+  schedule:
+    # Elke 10 minuten (in de praktijk vaak wat vertraagd door GitHub)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    # Hiermee kun je de workflow handmatig starten via de Actions-tab
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Stap 1: Code ophalen uit de main-branch
+      - name: Code ophalen
+        uses: actions/checkout@v4
+
+      # Stap 2: Python installeren
+      - name: Python installeren
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Stap 3: Benodigde bibliotheken installeren
+      - name: Bibliotheken installeren
+        run: pip install -r requirements.txt
+
+      # Stap 4: State ophalen uit de state-branch
+      # (database, hartslag van de Mac, en laatste waarschuwing)
+      - name: State ophalen
+        run: |
+          git fetch origin state || echo "State-branch bestaat nog niet"
+          if git rev-parse origin/state >/dev/null 2>&1; then
+            git checkout origin/state -- listings.db 2>/dev/null || echo "Geen database in state"
+            git checkout origin/state -- heartbeat.txt 2>/dev/null || echo "Geen heartbeat in state"
+            git checkout origin/state -- alert.txt 2>/dev/null || echo "Geen alert-bestand in state"
+          fi
+
+      # Stap 5: Watchdog + eventueel monitor draaien
+      - name: Watchdog-check (en monitor als de Mac stil is)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python cloud_check.py
+
+      # Stap 6: State terugschrijven naar de state-branch
+      - name: State opslaan
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p /tmp/state
+          cp listings.db heartbeat.txt alert.txt /tmp/state/ 2>/dev/null || true
+
+          if git rev-parse origin/state >/dev/null 2>&1; then
+            git checkout -f state 2>/dev/null || git checkout -f -b state origin/state
+            git pull origin state || true
+          else
+            git checkout --orphan state
+            git rm -rf . 2>/dev/null || true
+          fi
+
+          cp /tmp/state/* . 2>/dev/null || true
+          git add listings.db heartbeat.txt alert.txt 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "Geen wijzigingen in state"
+          else
+            git commit -m "State bijgewerkt (cloud) $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push origin state
+          fi
+
+      # Stap 7: Vangnet - als de job zelf crasht, stuur een Telegram-bericht
+      - name: Crash-melding
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            -d text="🚨 <b>GitHub Actions job gecrasht!</b>%0A%0ADe huurwoning-monitor (cloud) kon niet draaien. Check de logs op GitHub."

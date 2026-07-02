@@ -1,0 +1,13 @@
+# Geheimen - nooit naar GitHub!
+.env
+
+# Lokale data en logs (de database gaat via de state-branch, niet via main)
+listings.db
+*.log
+*.log.oud
+heartbeat.txt
+alert.txt
+
+# Python
+__pycache__/
+*.pyc
