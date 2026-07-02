@@ -18,9 +18,13 @@ from shared import (
     FAIL_THRESHOLD, MAX_PRIJS,
 )
 
-from scrapers import koops, rotsvast, wbos, ikwilhuren, vesteda, wonen123, interhouse
+from scrapers import (
+    koops, rotsvast, wbos, ikwilhuren, vesteda, wonen123, interhouse,
+    hre, centraal, nuwoonruimte,
+)
 
-SITES = [koops, rotsvast, wbos, ikwilhuren, vesteda, wonen123, interhouse]
+SITES = [koops, rotsvast, wbos, ikwilhuren, vesteda, wonen123, interhouse,
+         hre, centraal, nuwoonruimte]
 
 
 def handle_failure(db, site, error_message):

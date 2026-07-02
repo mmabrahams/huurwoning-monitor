@@ -1,6 +1,6 @@
 # Huurwoning Monitor Haarlem e.o.
 
-Checkt elke 5 minuten zeven verhuursites op nieuwe huurwoningen in
+Checkt elke 5 minuten tien verhuursites op nieuwe huurwoningen in
 **Haarlem, Heemstede, Santpoort en Overveen** tot **€ 1.300 per maand**,
 en stuurt een Telegram-bericht bij elke nieuwe woning (adres, plaats,
 prijs en link). Zakt de prijs van een bekende woning tot binnen het
@@ -17,6 +17,9 @@ budget, dan krijg je ook een bericht (prijsverlaging).
 | Vesteda | JSON-API (de woningen staan niet in de HTML) |
 | 123Wonen | Vestigingspagina `/huurwoningen/van/haarlem` (toont hele regio) |
 | Interhouse | WordPress-AJAX-endpoint (`building_results_action`, vestiging Haarlem) |
+| Haarlem Real Estate | JSON-feed `/en/realtime-listings/consumer` |
+| Centraal Makelaardij | HTML-pagina `/aanbod/` (koopwoningen worden overgeslagen) |
+| nuWoonruimte | HTML-pagina `/woningaanbod/huur` |
 
 ## Cloud-vangnet + watchdog (GitHub Actions)
 
@@ -92,5 +95,12 @@ Nieuw bestand in `scrapers/` + één regel in de `SITES`-lijst in
 `monitor.py`, en daarna `git push` (zodat de cloud hem ook kent).
 De eerste run seedt automatisch zonder berichtenregen.
 
-Onderzocht en afgevallen: huurwoningen.nl en Pararius blokkeren
-geautomatiseerde verzoeken (HTTP 403).
+Onderzocht en afgevallen (juli 2026):
+
+| Site | Reden |
+|---|---|
+| huurwoningen.nl / Pararius | Blokkeren geautomatiseerde verzoeken (HTTP 403) |
+| Wado (Van Waalwijk van Doorn) | Aanbod is alleen koop; huur-filter werkt niet server-side |
+| JRS Makelaars | Vrijwel alleen koopwoningen |
+| PUUR Verhuur & Beheer | Eigen site toont geen huuraanbod (adverteren via Pararius) |
+| Koops Makelaardij | Zelfde bedrijf als Verhuur met Koops (al in de monitor) |
