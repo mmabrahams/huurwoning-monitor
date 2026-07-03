@@ -31,6 +31,14 @@ if [ $STATUS -eq 0 ]; then
     TMPDIR_STATE=$(mktemp -d)
     cp listings.db "$TMPDIR_STATE/" 2>/dev/null
     date -u +"%Y-%m-%dT%H:%M:%S+00:00" > "$TMPDIR_STATE/heartbeat.txt"
+    # Bewaar het waarschuwings-bestandje van de cloud-watchdog (alert.txt).
+    # Zonder dit zou elke Mac-run het wissen en zou de watchdog steeds
+    # opnieuw waarschuwen (de "max 1x per 24 uur"-rem werkt dan niet).
+    if git show origin/state:alert.txt > "$TMPDIR_STATE/alert.txt" 2>/dev/null; then
+        :
+    else
+        rm -f "$TMPDIR_STATE/alert.txt"
+    fi
     (
         cd "$TMPDIR_STATE" &&
         git init -q -b state &&

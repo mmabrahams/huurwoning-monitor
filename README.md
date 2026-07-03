@@ -27,9 +27,15 @@ De monitor draait op je Mac, maar een Mac slaapt weleens. Daarom:
 
 - Na elke geslaagde run pusht de Mac een **hartslag** (tijdstempel) en de
   database naar GitHub (repo `mmabrahams/huurwoning-monitor`, branch `state`).
-- **GitHub Actions checkt elke ~10 minuten** die hartslag. Is hij ouder dan
-  25 minuten, dan krijg je één Telegram-waarschuwing (max 1x per 24 uur)
-  en draait de cloud de monitor zelf, tot je Mac terug is.
+- **GitHub Actions checkt regelmatig** die hartslag (gepland elke 10 min,
+  maar GitHub's planner is grillig - in de praktijk elke 10 min tot enkele
+  uren). Is de hartslag ouder dan 25 minuten, dan draait de cloud de
+  monitor zelf, tot je Mac terug is.
+- Daarbij krijg je een Telegram-waarschuwing, maar met twee remmen:
+  **niet tijdens de stille uren (22:00 - 09:00)** - een Mac die 's nachts
+  slaapt is normaal, de cloud neemt het dan stil over - en **maximaal 1x
+  per 24 uur** (bijgehouden in alert.txt op de state-branch; de Mac
+  bewaart dat bestandje bij zijn eigen pushes).
 - De cloud gebruikt **dezelfde database**, en de Mac neemt bij het opstarten
   eerst de cloud-vondsten over. Zo krijg je geen dubbele berichten.
 
