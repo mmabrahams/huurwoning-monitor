@@ -10,10 +10,12 @@ Eén kapotte site blokkeert de rest niet (try/except per site).
 """
 
 import traceback
+from datetime import datetime
 
 from shared import (
     log, send_telegram, open_db, site_is_new, get_bekende_listing,
     bewaar_listing, update_listing_prijs, get_fail_count, set_status,
+    get_last_attempt, stamp_attempt,
     plaats_ok, prijs_ok, format_telegram_message, format_prijsdaling_message,
     FAIL_THRESHOLD, MAX_PRIJS,
 )
@@ -88,6 +90,19 @@ def check_site(db, site):
     """Check één site op nieuwe woningen. Geeft True terug als het gelukt is."""
     name, label = site.SITE_NAME, site.SITE_LABEL
     log(f"--- {label} ---")
+
+    # Sommige sites checken we bewust minder vaak (om hun beveiligingsbot
+    # niet te triggeren). De scraper geeft dat aan met CHECK_INTERVAL_MIN.
+    interval = getattr(site, "CHECK_INTERVAL_MIN", 0)
+    if interval:
+        laatste_poging = get_last_attempt(db, name)
+        if laatste_poging is not None:
+            minuten_geleden = (datetime.now() - laatste_poging).total_seconds() / 60
+            if minuten_geleden < interval:
+                log(f"[{name}] Overgeslagen (we checken deze site max 1x per "
+                    f"{interval} min; laatste poging {int(minuten_geleden)} min geleden)")
+                return True
+    stamp_attempt(db, name)
 
     try:
         result = site.fetch_listings()

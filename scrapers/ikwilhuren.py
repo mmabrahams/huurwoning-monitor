@@ -1,7 +1,12 @@
 """
 Scraper voor ikwilhuren.nu (MVGM), aanbod gemeente Haarlem.
-Kaarten zijn <div class="card-woning">. De pagina heeft paginering
-(?page=1, ?page=2, ...); we volgen maximaal MAX_PAGES pagina's.
+Kaarten zijn <div class="card-woning">.
+
+LET OP: deze site heeft een strenge beveiligingsbot. Op 21 juli 2026
+blokkeerde die ons IP-adres omdat we elke 5 minuten tot 6 pagina's
+ophaalden. Daarom doen we het nu heel rustig aan:
+- alleen de eerste pagina (daar staan de nieuwste woningen), en
+- maximaal 1x per uur (via CHECK_INTERVAL_MIN, zie monitor.py).
 """
 
 import os
@@ -17,12 +22,18 @@ SITE_NAME = "ikwilhuren"
 SITE_LABEL = "ikwilhuren.nu"
 URL = "https://ikwilhuren.nu/aanbod/haarlem"
 BASE = "https://ikwilhuren.nu"
-MAX_PAGES = 5
+
+# Maximaal 1x per uur checken - de beveiligingsbot van deze site is streng
+CHECK_INTERVAL_MIN = 60
 
 
-def parse_page(html):
-    """Haal de listings van één pagina-HTML."""
-    soup = BeautifulSoup(html, "html.parser")
+def fetch_listings():
+    log(f"[{SITE_NAME}] Pagina ophalen: {URL}")
+    response = requests.get(URL, headers=HEADERS, timeout=15)
+    response.raise_for_status()
+    page_size = len(response.text)
+
+    soup = BeautifulSoup(response.text, "html.parser")
     cards = soup.select("div.card-woning")
 
     listings = []
@@ -54,49 +65,11 @@ def parse_page(html):
             "price_eur": parse_prijs(price_text),
         })
 
-    # Zoek links naar volgende pagina's
-    page_links = set()
-    for a in soup.find_all("a", href=True):
-        if "?page=" in a["href"]:
-            page_links.add(a["href"])
-
-    return listings, len(cards) > 0, page_links
-
-
-def fetch_listings():
-    log(f"[{SITE_NAME}] Pagina ophalen: {URL}")
-    response = requests.get(URL, headers=HEADERS, timeout=15)
-    response.raise_for_status()
-    page_size = len(response.text)
-
-    listings, container_found, page_links = parse_page(response.text)
-
-    # Volg de pagineringslinks (maximaal MAX_PAGES extra pagina's)
-    seen_pages = {URL}
-    for href in sorted(page_links)[:MAX_PAGES]:
-        page_url = BASE + href if href.startswith("/") else href
-        if page_url in seen_pages:
-            continue
-        seen_pages.add(page_url)
-        try:
-            r = requests.get(page_url, headers=HEADERS, timeout=15)
-            r.raise_for_status()
-            extra, _, _ = parse_page(r.text)
-            listings.extend(extra)
-        except Exception as e:
-            log(f"[{SITE_NAME}] Kon vervolgpagina niet ophalen ({page_url}): {e}")
-
-    # Ontdubbel binnen deze run (pagina 0 en 1 kunnen hetzelfde zijn)
-    unique = {}
-    for l in listings:
-        unique[l["url"]] = l
-    listings = list(unique.values())
-
-    log(f"[{SITE_NAME}] {len(listings)} listings gevonden")
+    log(f"[{SITE_NAME}] {len(listings)} listings gevonden (alleen pagina 1)")
     return {
         "listings": listings,
         "health": {
             "page_size": page_size,
-            "container_found": container_found,
+            "container_found": len(cards) > 0,
         },
     }

@@ -13,7 +13,7 @@ budget, dan krijg je ook een bericht (prijsverlaging).
 | Verhuur met Koops | HTML-pagina |
 | Rotsvast | Zoekpagina `/huren/?search=Haarlem&radius=10` (de oude woningaanbod-URL bestaat niet meer) |
 | WBOS Makelaars | HTML-pagina (al verhuurde woningen worden overgeslagen) |
-| ikwilhuren.nu | HTML-pagina's, met paginering |
+| ikwilhuren.nu | HTML-pagina, alleen pagina 1, max 1x per uur (hun beveiligingsbot blokkeerde op 21-07-2026 ons IP na 2,5 week elke-5-min-scrapen met 6 pagina's per keer; ontgrendelen kan via de blokkadepagina zelf) |
 | Vesteda | JSON-API (de woningen staan niet in de HTML) |
 | 123Wonen | Vestigingspagina `/huurwoningen/van/haarlem` (toont hele regio) |
 | Interhouse | WordPress-AJAX-endpoint (`building_results_action`, vestiging Haarlem) |

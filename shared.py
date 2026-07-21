@@ -109,6 +109,12 @@ def open_db():
         db.execute("ALTER TABLE listings ADD COLUMN price_eur INTEGER")
     except sqlite3.OperationalError:
         pass  # Kolom bestaat al
+    # Migratie: kolom voor het tijdstip van de laatste poging per site
+    # (nodig voor sites die we bewust minder vaak checken)
+    try:
+        db.execute("ALTER TABLE site_status ADD COLUMN last_attempt TEXT")
+    except sqlite3.OperationalError:
+        pass  # Kolom bestaat al
     # Vul ontbrekende prijzen aan vanuit de opgeslagen prijstekst
     rows = db.execute(
         "SELECT url, price FROM listings WHERE price_eur IS NULL AND price != ''"
@@ -206,6 +212,30 @@ def get_fail_count(db, site):
         "SELECT fail_count FROM site_status WHERE site = ?", (site,)
     ).fetchone()
     return row[0] if row else 0
+
+
+def get_last_attempt(db, site):
+    """Wanneer we deze site voor het laatst probeerden (datetime of None)."""
+    row = db.execute(
+        "SELECT last_attempt FROM site_status WHERE site = ?", (site,)
+    ).fetchone()
+    if not row or not row[0]:
+        return None
+    try:
+        return datetime.fromisoformat(row[0])
+    except ValueError:
+        return None
+
+
+def stamp_attempt(db, site):
+    """Leg vast dat we deze site nu (gaan) proberen."""
+    db.execute(
+        "INSERT INTO site_status (site, fail_count) VALUES (?, 0) "
+        "ON CONFLICT(site) DO NOTHING", (site,))
+    db.execute(
+        "UPDATE site_status SET last_attempt = ? WHERE site = ?",
+        (datetime.now().isoformat(), site))
+    db.commit()
 
 
 def set_status(db, site, fail_count, page_size=None, success=False):
