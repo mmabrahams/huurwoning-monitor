@@ -1,6 +1,6 @@
 # Huurwoning Monitor Haarlem e.o.
 
-Checkt elke 5 minuten tien verhuursites op nieuwe huurwoningen in
+Checkt elke 5 minuten negen verhuursites op nieuwe huurwoningen in
 **Haarlem, Heemstede, Santpoort en Overveen** tot **€ 1.300 per maand**,
 en stuurt een Telegram-bericht bij elke nieuwe woning (adres, plaats,
 prijs en link). Zakt de prijs van een bekende woning tot binnen het
@@ -13,7 +13,6 @@ budget, dan krijg je ook een bericht (prijsverlaging).
 | Verhuur met Koops | HTML-pagina |
 | Rotsvast | Zoekpagina `/huren/?search=Haarlem&radius=10` (de oude woningaanbod-URL bestaat niet meer) |
 | WBOS Makelaars | HTML-pagina (al verhuurde woningen worden overgeslagen) |
-| ikwilhuren.nu | HTML-pagina, alleen pagina 1, max 1x per uur (hun beveiligingsbot blokkeerde op 21-07-2026 ons IP na 2,5 week elke-5-min-scrapen met 6 pagina's per keer; ontgrendelen kan via de blokkadepagina zelf) |
 | Vesteda | JSON-API (de woningen staan niet in de HTML) |
 | 123Wonen | Vestigingspagina `/huurwoningen/van/haarlem` (toont hele regio) |
 | Interhouse | WordPress-AJAX-endpoint (`building_results_action`, vestiging Haarlem) |
@@ -106,6 +105,7 @@ Onderzocht en afgevallen (juli 2026):
 | Site | Reden |
 |---|---|
 | huurwoningen.nl / Pararius | Blokkeren geautomatiseerde verzoeken (HTTP 403) |
+| ikwilhuren.nu | Zat in de monitor, maar hun beveiligingsbot blokkeerde op 21-07-2026 ons thuis-IP; de zelfhulp-ontgrendeling (captcha) werkte niet. Op verzoek verwijderd. Alternatief: eigen account met e-mailalert op hun site. Scraper staat nog in `scrapers/ikwilhuren.py` |
 | Wado (Van Waalwijk van Doorn) | Aanbod is alleen koop; huur-filter werkt niet server-side |
 | JRS Makelaars | Vrijwel alleen koopwoningen |
 | PUUR Verhuur & Beheer | Eigen site toont geen huuraanbod (adverteren via Pararius) |

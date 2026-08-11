@@ -20,12 +20,16 @@ from shared import (
     FAIL_THRESHOLD, MAX_PRIJS,
 )
 
+# ikwilhuren.nu is op verzoek verwijderd (21-07-2026): hun beveiligingsbot
+# blokkeerde ons IP en de zelfhulp-ontgrendeling werkte niet.
+# De scraper (scrapers/ikwilhuren.py) staat er nog, dus terugzetten = hem
+# hier weer importeren en aan SITES toevoegen.
 from scrapers import (
-    koops, rotsvast, wbos, ikwilhuren, vesteda, wonen123, interhouse,
+    koops, rotsvast, wbos, vesteda, wonen123, interhouse,
     hre, centraal, nuwoonruimte,
 )
 
-SITES = [koops, rotsvast, wbos, ikwilhuren, vesteda, wonen123, interhouse,
+SITES = [koops, rotsvast, wbos, vesteda, wonen123, interhouse,
          hre, centraal, nuwoonruimte]
 
 
